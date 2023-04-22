@@ -1,0 +1,57 @@
+name: Build Cezanne-R-OSS Kernel
+
+on:
+  push:
+    branches: [cezanne-r-oss]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+      with:
+        submodules: 'recursive'
+
+    - name: Install dependencies and cache
+      run: |
+        sudo apt-get update && sudo apt-get install -y \
+          git ccache automake flex lzop bison \
+          gperf build-essential zip curl zlib1g-dev  \
+          g++-multilib  libxml2-utils bzip2 libbz2-dev \
+          libbz2-1.0 libghc-bzlib-dev squashfs-tools pngcrush \
+          schedtool dpkg-dev liblz4-tool make optipng maven libssl-dev \
+          pwgen libswitch-perl policycoreutils minicom libxml-sax-base-perl \
+          libxml-simple-perl bc libc6-dev-i386 lib32ncurses5-dev \
+          x11proto-core-dev libx11-dev lib32z-dev libgl1-mesa-dev xsltproc unzip
+
+        CCACHE_DIR=${{ runner.workspace }}/.ccache
+        mkdir -p $CCACHE_DIR
+        echo "max_size = 5G" > $CCACHE_DIR/ccache.conf
+        export PATH="/usr/lib/ccache:$PATH"
+        export CCACHE_DIR=$CCACHE_DIR
+
+        # Cache toolgcc
+        if [ ! -d "${{ runner.workspace }}/toolgcc" ]; then
+          git clone https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 ${runner.workspace}/toolgcc
+          cd ${runner.workspace}/toolgcc && git reset --hard 95280
+        fi
+
+        # Cache toolclang
+        if [ ! -d "${{ runner.workspace }}/toolclang" ]; then
+          git clone https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 ${runner.workspace}/toolclang
+          cd ${runner.workspace}/toolclang && git reset --hard b800f
+        fi
+
+    - name: Set up environment variables
+      run: |
+        export ARCH=arm64
+        export SUBARCH=arm64
+        export CROSS_COMPILE=${{ runner.workspace }}/toolgcc/bin/aarch64-linux-android-
+        export PATH=${{ runner.workspace }}/toolgcc/bin:${{ runner.workspace }}/toolclang/clang-r383902/bin:$PATH
+
+    - name: Build kernel
+      run: |
+        cd $(dirname ${{ runner.workspace }})/
+        ARCH=arm64 make CC=clang HOSTCC=gcc AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip O=out CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-android- LD=ld.lld cezanne_user_defconfig
+        ARCH=arm64 make CC=clang HOSTCC=gcc AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip O=out CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-android- LD=ld.lld -j4

@@ -40,7 +40,10 @@ jobs:
           pwgen libswitch-perl policycoreutils minicom libxml-sax-base-perl \
           libxml-simple-perl bc libc6-dev-i386 lib32ncurses5-dev \
           x11proto-core-dev libx11-dev lib32z-dev libgl1-mesa-dev xsltproc unzip
-
+        
+        sudo -E apt-get -qq autoremove --purge
+        sudo -E apt-get -qq clean
+        
         CCACHE_DIR=${{ runner.workspace }}/.ccache
         mkdir -p $CCACHE_DIR
         echo "max_size = 50G" > $CCACHE_DIR/ccache.conf
@@ -51,17 +54,21 @@ jobs:
         if [ ! -d "${{ runner.workspace }}/toolgcc" ]; then
           git clone https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 ${{ runner.workspace }}/toolgcc
           cd ${{ runner.workspace }}/toolgcc && git reset --hard d1da347
+        else
+          echo "Toolgcc already exists"
         fi
 
         # Cache toolclang
         if [ ! -d "${{ runner.workspace }}/toolclang" ]; then
           git clone https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 ${{ runner.workspace }}/toolclang
           cd ${{ runner.workspace }}/toolclang && git reset --hard fb69815
+        else
+          echo "Toolclang already exists"
         fi
 
     - name: Clean space
       run: |
-        sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc
+        sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache /usr/local/share
         #sudo -E apt-get -qq update
         #sudo -E apt-get -qq install $(curl -fsSL git.io/depends-ubuntu-1804)
         sudo -E apt-get -qq autoremove --purge
@@ -75,6 +82,14 @@ jobs:
         export CROSS_COMPILE=${{ runner.workspace }}/toolgcc/bin/aarch64-linux-android-
         export PATH=${{ runner.workspace }}/toolgcc/bin:${{ runner.workspace }}/toolclang/clang-r383902/bin:$PATH
 
+    - name: Ls debug
+      run: |
+        sudo ls -a
+        cd $(dirname ${{ runner.workspace }})/
+        sudo ls -a
+        cd .ccache
+        sudo ls -a
+        
     - name: Build kernel
       run: |
         cd $(dirname ${{ runner.workspace }})/

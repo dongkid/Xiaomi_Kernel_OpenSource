@@ -75,22 +75,13 @@ jobs:
         sudo -E apt-get -qq clean
         sudo df -hl
         
-    - name: Set up environment variables
+    - name: Build kernel
       run: |
         export ARCH=arm64
         export SUBARCH=arm64
         export CROSS_COMPILE=${{ runner.workspace }}/toolgcc/bin/aarch64-linux-android-
         export PATH=${{ runner.workspace }}/toolgcc/bin:${{ runner.workspace }}/toolclang/clang-r383902/bin:$PATH
-
-    - name: Ls debug
-      run: |
-        sudo ls -a
         cd $(dirname ${{ runner.workspace }})/
-        sudo ls -a
-        cd .ccache
-        sudo ls -a
-        
-    - name: Build kernel
-      run: |
-        cd $(dirname ${{ runner.workspace }})/
-        #ARCH=arm64 make CC=clang HOSTCC=gcc AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip O=out CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64
+        # 进入代码文件夹
+        ARCH=arm64 make CC=clang HOSTCC=gcc AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip O=out CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-android- LD=ld.lld cezanne_user_defconfig
+        ARCH=arm64 make CC=clang HOSTCC=gcc AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip O=out CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-android- LD=ld.lld -j4

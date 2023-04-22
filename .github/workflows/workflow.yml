@@ -13,7 +13,17 @@ jobs:
       with:
         submodules: 'recursive'
 
-    - name: Install dependencies and cache
+    - name: Cache dependencies
+      uses: actions/cache@v2
+      with:
+        path: |
+          /usr/lib/ccache
+          ${{ runner.workspace }}/.ccache
+          ${{ runner.workspace }}/toolgcc
+          ${{ runner.workspace }}/toolclang
+        key: ${{ runner.os }}-kernel-${{ hashFiles('**/build-kernel.yml') }}
+
+    - name: Install dependencies
       run: |
         sudo apt-get update && sudo apt-get install -y \
           git ccache automake flex lzop bison \
@@ -34,13 +44,13 @@ jobs:
         # Cache toolgcc
         if [ ! -d "${{ runner.workspace }}/toolgcc" ]; then
           git clone https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 ${{ runner.workspace }}/toolgcc
-          cd ${{ runner.workspace }}/toolgcc && git reset --hard 95280
+          cd ${{ runner.workspace }}/toolgcc && git reset --hard d1da347
         fi
 
         # Cache toolclang
         if [ ! -d "${{ runner.workspace }}/toolclang" ]; then
           git clone https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 ${{ runner.workspace }}/toolclang
-          cd ${{ runner.workspace }}/toolclang && git reset --hard b800f
+          cd ${{ runner.workspace }}/toolclang && git reset --hard fb69815
         fi
 
     - name: Set up environment variables
@@ -53,5 +63,4 @@ jobs:
     - name: Build kernel
       run: |
         cd $(dirname ${{ runner.workspace }})/
-        ARCH=arm64 make CC=clang HOSTCC=gcc AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip O=out CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-android- LD=ld.lld cezanne_user_defconfig
-        ARCH=arm64 make CC=clang HOSTCC=gcc AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip O=out CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-android- LD=ld.lld -j4
+        #ARCH=arm64 make CC=clang HOSTCC=gcc AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip O=out CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64

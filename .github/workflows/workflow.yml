@@ -23,6 +23,12 @@ jobs:
           ${{ runner.workspace }}/toolclang
         key: ${{ runner.os }}-kernel-${{ hashFiles('**/build-kernel.yml') }}
 
+    - name: Freeing up space
+      run: |
+        sudo df -hl
+        sudo rm -rf /usr/share/dotnet
+        sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+
     - name: Install dependencies
       run: |
         sudo apt-get update && sudo apt-get install -y \

@@ -34,13 +34,13 @@ jobs:
         # Cache toolgcc
         if [ ! -d "${{ runner.workspace }}/toolgcc" ]; then
           git clone https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 ${{ runner.workspace }}/toolgcc
-          cd ${runner.workspace}/toolgcc && git reset --hard 95280
+          cd ${{ runner.workspace }}/toolgcc && git reset --hard 95280
         fi
 
         # Cache toolclang
         if [ ! -d "${{ runner.workspace }}/toolclang" ]; then
           git clone https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 ${{ runner.workspace }}/toolclang
-          cd ${runner.workspace}/toolclang && git reset --hard b800f
+          cd ${{ runner.workspace }}/toolclang && git reset --hard b800f
         fi
 
     - name: Set up environment variables
